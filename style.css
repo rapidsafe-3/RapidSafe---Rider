@@ -1,0 +1,324 @@
+:root {
+    --primary: #7B679A; 
+    --bg-pure: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+body, html { background-color: #cbd5e1; display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; overflow: hidden; }
+
+#app-container { width: 100%; max-width: 480px; height: 100dvh; background: var(--bg-pure); position: relative; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
+
+.screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-pure); display: none; flex-direction: column; z-index: 10; }
+.screen.active { display: flex; }
+
+.padding-20 { padding: 20px; }
+.scroll-area { flex-grow: 1; overflow-y: auto; }
+.text-muted { color: var(--text-muted); }
+h2 { color: var(--primary); margin-bottom: 8px; font-size: 1.8rem; }
+
+.input-group { margin-bottom: 20px; text-align: left; }
+.input-group label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem; font-weight: 500;}
+.input-group input { width: 100%; padding: 18px 20px; border: 1px solid var(--border); border-radius: 12px; font-size: 1rem; background: #f8fafc; outline: none; transition: border 0.2s;}
+.input-group input:focus { border-color: var(--primary); background: #ffffff;}
+
+.btn { width: 100%; padding: 18px; border-radius: 100px; font-size: 1rem; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text-main); }
+.btn-outline:active { background: #f8fafc; }
+.btn-text { background: transparent; border: none; color: var(--text-muted); width: 100%; padding: 10px; cursor: pointer; font-weight: 500;}
+
+.divider { width: 100%; text-align: center; border-bottom: 1px solid var(--border); line-height: 0.1em; margin: 30px 0; }
+.divider span { background: var(--bg-pure); padding: 0 10px; font-size: 0.8rem; color: var(--text-muted); }
+
+.pulse-loader { width: 100px; height: 100px; background: #fef08a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; margin: 0 auto; animation: pulse 2s infinite ease-in-out; }
+@keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4); } 70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(14, 165, 233, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); } }
+
+.map-view-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; z-index: 1; background: #e2e8f0; }
+
+.ny-top-controls { position: absolute; top: 20px; left: 15px; right: 15px; z-index: 10; display: flex; flex-direction: column; gap: 10px; }
+.ny-action-row { display: flex; justify-content: space-between; align-items: center; }
+
+.ny-dashboard-sheet { position: absolute; bottom: 75px; left: 0; right: 0; background: white; border-radius: 24px 24px 0 0; padding: 20px; z-index: 15; box-shadow: 0 -10px 25px rgba(0,0,0,0.05); }
+
+.trusted-card { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.2s ease; }
+.trusted-card:active { transform: scale(0.98); background: #f1f5f9; }
+
+.bottom-nav-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 75px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(0, 0, 0, 0.05); display: none; justify-content: space-around; align-items: center; padding-bottom: 10px; z-index: 100; }
+.nav-item { background: none; border: none; outline: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #94a3b8; cursor: pointer; transition: all 0.2s; width: 60px; }
+.nav-item span { font-size: 0.7rem; font-weight: 600; }
+.nav-item.active { color: var(--primary); }
+
+.sos-btn { position: absolute; top: 20px; right: 20px; background: #ef4444; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-weight: 800; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); z-index: 50; cursor: pointer; }
+
+.in-app-toast { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); display: flex; align-items: center; padding: 16px; gap: 15px; z-index: 9999; transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-left: 4px solid var(--primary); }
+.in-app-toast.show { top: 20px; }
+.toast-content h4 { color: #0f172a; margin-bottom: 4px; font-size: 0.95rem; }
+.toast-content p { color: #64748b; font-size: 0.85rem; line-height: 1.3; margin: 0;}
+.toast-close { background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer; }
+
+.history-card { background: white; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+
+/* --- SEARCH SCREEN QUICK PILLS --- */
+.ny-quick-pill {
+    background: white;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    border-radius: 100px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.ny-quick-pill:active { background: #f1f5f9; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* --- FINDING SCREEN ANIMATIONS & PILLS --- */
+.ny-progress-bar { 
+    width: 30%; 
+    height: 100%; 
+    background: #fbbf24; /* Namma Yatri Amber/Yellow */
+    border-radius: 3px; 
+    animation: slideProgress 1.5s infinite ease-in-out; 
+}
+@keyframes slideProgress { 
+    0% { transform: translateX(-100%); } 
+    100% { transform: translateX(350%); } 
+}
+.ny-tip-pill { 
+    background: white; 
+    border: 1px solid #cbd5e1; 
+    color: #0f172a; 
+    font-weight: 600; 
+    font-size: 0.95rem; 
+    padding: 10px 18px; 
+    border-radius: 100px; 
+    white-space: nowrap; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+}
+.ny-tip-pill.active { 
+    border-color: #fbbf24; 
+    background: #fffbeb; 
+    box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
+}
+/* --- CANCELLATION MODAL & RATINGS --- */
+.cancel-reason-btn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    padding: 12px 20px;
+    text-align: left;
+    font-size: 1rem;
+    color: #0f172a;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.cancel-reason-btn.selected {
+    border-color: #0f172a;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    background: #f8fafc;
+}
+.cancel-reason-btn span { font-size: 1.2rem; }
+
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    80% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+/* --- PREMIUM PROFILE MENU STYLING --- */
+.ny-menu-group {
+    background: white;
+    border-radius: 18px;
+    margin: 0 20px 25px 20px;
+    width: calc(100% - 40px);
+    box-sizing: border-box;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.ny-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.ny-menu-item:active { 
+    background: #f8fafc; 
+}
+
+.ny-menu-item:last-child { 
+    border-bottom: none; 
+}
+
+.ny-menu-icon { 
+    width: 26px; 
+    height: 26px; 
+    color: #334155; 
+    margin-right: 18px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+.ny-menu-icon svg { 
+    width: 24px; 
+    height: 24px; 
+}
+
+.ny-menu-text { 
+    flex-grow: 1; 
+    font-size: 1.05rem; 
+    font-weight: 600; 
+    color: #0f172a; 
+}
+
+.ny-menu-chevron { 
+    color: #cbd5e1; 
+    font-size: 1.8rem; 
+    line-height: 1; 
+    margin-top: -4px; 
+    font-weight: 300;
+}
+/* --- PREMIUM SAFETY IMAGE SLIDER --- */
+.ny-safety-slider {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.ny-safety-card {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #e5e5ea;
+    padding: 20px;
+    min-width: 290px;
+    width: 290px;
+    box-sizing: border-box;
+    scroll-snap-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.ny-safety-card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 14px;
+    background: #f8fafc;
+    margin-bottom: 16px;
+}
+
+.ny-safety-card h4 {
+    color: #0f172a;
+    font-weight: 800;
+    font-size: 1.15rem;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.3px;
+}
+
+.ny-safety-card p {
+    color: #64748b;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
+    font-weight: 500;
+}
+
+.ny-safety-badge {
+    position: absolute;
+    top: 32px;
+    left: 32px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 100px;
+    letter-spacing: 0.8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+/* --- REFERRAL SHEET PILL INTERACTION CONTROLS --- */
+.ny-action-pill-btn {
+    border: 1px solid #e2e8f0;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 10px 20px;
+    border-radius: 100px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    transition: all 0.15s ease;
+}
+.ny-action-pill-btn:active {
+    transform: scale(0.96);
+    background: #f8fafc;
+}
+@keyframes bounceFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+/* --- METALLIC SPLASH SCREEN STYLES --- */
+.splash-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center; /* Forces all child text to the center */
+    width: 100%;
+    animation: popIn 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.brand-splash {
+    font-size: 52px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    margin: 0;
+    text-align: center;
+    background: linear-gradient(to right, #b8c6db 0%, #ffffff 50%, #b8c6db 100%);
+
+-webkit-background-clip: text;
+
+-webkit-text-fill-color: transparent;
+
+filter: drop-shadow(0px 10px 10pxrgba(0,0,0,0.15));
+}
+
+.splash-sub {
+    margin-top: 15px;
+    color: #ffffff; 
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
