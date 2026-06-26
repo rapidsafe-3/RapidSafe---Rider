@@ -1,0 +1,17 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "RapidSafe - Rider App",
+  "orientation": "portrait",
+  "scope": "/",
+  "short_name": "RapidSafe",
+  "start_url": "/",
+  "theme_color": "#7b679a",
+  "description": "Book safe, affordable rides instantly. Direct payments and zero hidden fees.",
+  "id": "rapidsafe-7",
+  "lang": "en",
+  "categories": [
+    "travel"
+  ]
+}
