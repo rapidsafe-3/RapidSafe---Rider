@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidSafe - Rider App</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+
+        <link rel='stylesheet' type='text/css' href='https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps.css'>
+    <script src='https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps-web.min.js'></script>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app-container">
+
+        <section id="splashScreen" class="screen active" style="background: #7B679A; z-index: 10001; justify-content: center; align-items: center; flex-direction: column;">
+        <div class="splash-center">
+            <h1 class="brand-splash">RapidSafe</h1>
+          <p class="splash-sub">Ride Smart. Ride Safe.</p>
+        </div>
+  </section>
+
+    <section id="authScreen" class="screen">
+        <div class="padding-20" style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
+            <h2 id="authModeTitle">Welcome</h2>
+            <p class="text-muted" id="authModeSubtitle" style="margin-bottom: 30px;">Sign in to book a ride</p>
+            
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" id="emailInput" placeholder="name@example.com">
+            </div>
+            
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="passwordInput" placeholder="••••••••">
+            </div>
+
+            <button class="btn btn-primary" id="primaryAuthBtn" onclick="executeEmailAuth()">Sign In</button>
+            <div class="divider"><span>OR</span></div>
+            <button class="btn btn-outline" onclick="executeGoogleAuth()" style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                Continue with Google
+            </button>
+            <button class="btn-text" id="authToggleSwitcher" onclick="toggleAuthMode()" style="margin-top: 20px;">Create a new account</button>
+        </div>
+    </section>
+
+    <section id="phoneScreen" class="screen">
+        <div class="padding-20" style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
+            <h2>Secure Your Account</h2>
+            <p class="text-muted" style="margin-bottom: 30px;">Link a phone number so drivers can contact you.</p>
+            <div class="input-group">
+                <label>Phone Number</label>
+                <input type="tel" id="phoneInput" placeholder="9876543210">
+            </div>
+            <button class="btn btn-primary" onclick="linkPhoneNumber()">Verify & Link Number</button>
+        </div>
+    </section>
+
+    <section id="riderOnboardingScreen" class="screen">
+        <div class="padding-20" style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
+            <h2>Welcome to RapidSafe</h2>
+            <p class="text-muted" style="margin-bottom: 30px;">Let's set up your rider profile so drivers know who they are picking up.</p>
+            <div class="input-group">
+                <label>Full Name</label>
+                <input type="text" id="riderNameInput" placeholder="Enter your full name">
+            </div>
+            <button class="btn btn-primary" onclick="submitRiderOnboarding()">Start Riding</button>
+        </div>
+    </section>
+
+        <section id="riderDashboardScreen" class="screen with-nav">
+        <div id="riderMap" class="map-view-container"></div>
+        
+        <div class="ny-top-controls" style="pointer-events: none;">
+            <div class="ny-action-row" style="justify-content: flex-end; padding: 15px; pointer-events: auto;">
+                </div>
+        </div>
+
+        <div class="ny-dashboard-sheet" style="bottom: 75px; padding: 25px;">
+            <h3 style="color: #0f172a; margin-bottom: 20px; font-size: 1.4rem;">Where to?</h3>
+            
+            <button class="btn btn-outline" style="text-align: left; padding: 20px; font-size: 1.1rem; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02);" onclick="openLocationSearch()">
+                <span style="font-size: 1.3rem; margin-right: 12px; display: inline-block; transform: translateY(2px);">📍</span> 
+                Search destination
+            </button>
+        </div>
+    </section>
+
+        <section id="locationSearchScreen" class="screen" style="background: #ffffff; z-index: 3000;">
+        <div style="padding: 20px; padding-top: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); z-index: 10;">
+            
+            <div style="display: flex; align-items: center; margin-bottom: 25px;">
+                <button class="btn-text" style="text-align: left; padding: 0; color: #0f172a; font-size: 1.5rem; width: auto; font-weight: 300;" onclick="closeLocationSearch()">←</button>
+             
+            </div>
+            
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 15px; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+                <div style="position: absolute; left: 24px; top: 40px; bottom: 40px; width: 0px; border-left: 2px dashed #cbd5e1;"></div>
+                
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 12px;">
+                    <div style="width: 10px; height: 10px; background: #0f172a; border-radius: 50%; z-index: 2;"></div>
+                    <input type="text" id="pickupSearchInput" placeholder="Current Location" style="flex-grow: 1; border: none; font-size: 1rem; outline: none; color: #0f172a; font-weight: 600;" oninput="handleSearchInput('pickup')" onfocus="activeSearchField = 'pickup'; if(this.value.length < 3) showSearchHistory();">
+                </div>
+                
+                <div style="height: 1px; background: #e2e8f0; margin-left: 25px; margin-bottom: 12px;"></div>
+                
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 10px; height: 10px; background: #f59e0b; border-radius: 50%; z-index: 2;"></div>
+                    <input type="text" id="dropSearchInput" placeholder="Where are you going?" style="flex-grow: 1; border: none; font-size: 1rem; outline: none; color: #0f172a; font-weight: 600;" oninput="handleSearchInput('drop')" onfocus="activeSearchField = 'drop'; if(this.value.length < 3) showSearchHistory();">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px; overflow-x: auto; padding-bottom: 5px;" class="hide-scrollbar">
+            </div>
+        </div>
+        
+        <div class="scroll-area padding-20" id="searchSuggestionsList">
+            </div>
+    </section>
+
+    <section id="rideSelectionScreen" class="screen">
+        <div id="selectionMap" class="map-view-container" style="height: 45%; background: #e2e8f0;"></div>
+        
+        <div class="ny-dashboard-sheet" style="height: 60%; bottom: 0; border-radius: 24px 24px 0 0; overflow-y: auto;">
+            <button class="btn-text" style="text-align: left; padding: 0; margin-bottom: 15px;" onclick="returnToSearch()">← Back to Search</button>
+            <div id="routeSummaryDistance" style="margin-bottom: 15px;"></div>
+            <h3 style="color: #0f172a; margin-bottom: 20px;">Available Rides</h3>
+            <div id="vehicleOptionsList"></div>
+        </div>
+    </section>
+
+        <section id="searchingDriverScreen" class="screen">
+        <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
+            <button class="btn-text" style="background: white; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #0f172a; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" onclick="cancelRideRequest()">✕</button>
+        </div>
+
+        <div id="findingMap" class="map-view-container" style="height: 50%; background: #e2e8f0;"></div>
+
+        <div class="ny-dashboard-sheet" style="height: auto; min-height: 50%; bottom: 0; border-radius: 24px 24px 0 0; overflow-y: auto;">
+            
+            <div style="text-align: center; margin-bottom: 25px;">
+                <h2 id="findingStatusTitle" style="color: #0f172a; font-size: 1.4rem; font-weight: 800;">Finding nearby drivers</h2>
+                <p id="findingRadiusText" class="text-muted" style="font-size: 0.85rem; margin-top: 5px;">Broadcasting to drivers within 2km...</p>
+                <div style="width: 100%; background: #f1f5f9; height: 6px; border-radius: 3px; margin-top: 15px; overflow: hidden;">
+                    <div class="ny-progress-bar"></div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 15px;">
+                <span style="color: #64748b; font-weight: 600;">Ride Fare</span>
+                <strong id="findingLiveFare" style="color: #0f172a; font-size: 1.3rem;">₹0 - ₹0</strong>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <h4 style="color: #64748b; font-size: 0.85rem; margin-bottom: 12px; font-weight: 600;">Offer Additional Fare</h4>
+                <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px;" class="hide-scrollbar">
+                    <button class="ny-tip-pill" onclick="addTipAmount(20, this)">₹ 20 😋</button>
+                    <button class="ny-tip-pill" onclick="addTipAmount(30, this)">₹ 30 😃</button>
+                    <button class="ny-tip-pill" onclick="addTipAmount(50, this)">₹ 50 🤩</button>
+                </div>
+            </div>
+
+            <div style="position: sticky; bottom: 0; background: white; padding-top: 10px;">
+                <button id="boostSearchBtn" class="btn" style="background: #94a3b8; color: white; font-size: 1.1rem; font-weight: 700; padding: 16px; border-radius: 14px; width: 100%; transition: all 0.2s; pointer-events: none;">
+                    Awaiting Response...
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section id="activeRiderRideScreen" class="screen">
+                <button class="sos-btn" style="position: absolute; top: 20px; right: 20px; z-index: 10; background: white; color: #ef4444; font-weight: 800; border-radius: 20px; padding: 8px 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: none; display: flex; align-items: center; gap: 6px; cursor: pointer;" onclick="triggerSOS()">
+            <span style="background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem;">+</span> Safety
+        </button>
+        
+        <div id="activeRideMap" class="map-view-container" style="height: 50%; background: #e2e8f0;"></div>
+        
+        <div class="ny-dashboard-sheet" style="height: auto; min-height: 50%; bottom: 0; border-radius: 24px 24px 0 0; padding: 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); overflow-y: auto;">
+            
+            <div style="width: 40px; height: 4px; background: #e2e8f0; border-radius: 2px; margin: 0 auto 20px auto;"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 id="rideStatusTextRider" style="font-size: 1.35rem; color: #0f172a; font-weight: 800; margin: 0;">Driver is on the way!</h3>
+                <div id="riderOtpDisplay" style="background: #f1f5f9; padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 1.05rem; color: #0f172a;">OTP ----</div>
+            </div>
+
+            <div style="background: white; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #f1f5f9;">
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid white; outline: 2px solid #fcd34d; overflow: hidden; background: #f1f5f9; display: flex; align-items: center; justify-content: center;">
+                        <img id="assignedDriverPhoto" src="https://ui-avatars.com/api/?name=Driver&background=cbd5e1&color=ffffff" alt="Driver Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    
+                    <div>
+                        <h4 id="assignedDriverName" style="color: #2563eb; margin-bottom: 2px; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.5px; text-decoration: underline; text-underline-offset: 2px;">DRIVER NAME</h4>
+                        <div id="assignedVehicleModel" style="color: #64748b; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px;">AUTO RICKSHAW</div>
+                        <div id="assignedVehicleInfo" style="color: #64748b; font-size: 0.85rem;">Auto | ★ 4.81 | 👤 3</div>
+                    </div>
+                </div>
+                
+                <div style="text-align: right; display: flex; flex-direction: column; align-items: center;">
+                    <div style="font-size: 2.2rem; margin-bottom: -8px; z-index: 2;" id="assignedVehicleIcon">🛺</div>
+                    <div id="assignedVehiclePlate" style="background: #fcd34d; padding: 4px 8px; border-radius: 6px; font-weight: 800; font-size: 0.85rem; color: #0f172a; border: 1px solid #0f172a; white-space: nowrap;">KA 01 AP 0000</div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                <div>
+                    <b style="font-size: 1.15rem; color: #0f172a;">Fare estimate</b>
+                    <p style="color: #64748b; font-size: 0.9rem; margin-top: 2px;">Pay via cash or UPI</p>
+                </div>
+                <div id="finalRiderFareEstimate" style="font-size: 2rem; font-weight: 800; color: #0f172a;">₹0</div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
+                <button class="btn" style="background: white; width: 100%; border-radius: 12px; padding: 16px; font-size: 1.05rem; font-weight: 600; color: #ef4444; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);" onclick="cancelRideRequest()">Cancel Trip</button>
+            </div>
+
+            <div style="text-align: center; margin-top: 15px; padding-top: 25px; border-top: 1px dashed #e2e8f0;">
+                <h4 style="color: #0f172a; font-weight: 800; font-size: 1.15rem; margin-bottom: 12px;">Promise from RapidSafe!</h4>
+                <p style="color: #64748b; font-size: 0.85rem; line-height: 1.6; margin-bottom: 20px; padding: 0 10px;">
+                    We guarantee our driver partners will never demand additional cash above the estimated fare. If you experience otherwise, please report it immediately. Together, we ensure seamless and transparent rides.
+                </p>
+                
+                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+                    <img src="https://i.ibb.co/QvCQ691P/1000068901-removebg-preview.png" alt="CEO Signature" style="height: 50px; margin-bottom: 8px; filter: contrast(1.2);">
+                    <div style="color: #0f172a; font-weight: 800; font-size: 0.95rem; letter-spacing: 0.5px;">Mohammed Saqib Ahmed</div>
+                    <div style="color: #94a3b8; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">Founder & CEO</div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section id="riderRatingScreen" class="screen" style="background: #f8fafc; flex-direction: column;">
+        
+        <div style="height: 32%; background: #10b981; display: flex; align-items: center; justify-content: center; flex-direction: column; color: white;">
+            <div style="font-size: 4.5rem; margin-bottom: 10px; animation: popIn 0.5s ease-out;">🎉</div>
+            <h2 style="font-weight: 800; font-size: 1.8rem; margin: 0; letter-spacing: 0.5px;">You've Arrived!</h2>
+            <p style="opacity: 0.9; margin-top: 6px; font-size: 0.95rem; font-weight: 500;">Hope you had a great ride.</p>
+        </div>
+
+        <div style="flex-grow: 1; background: white; border-radius: 28px 28px 0 0; margin-top: -24px; padding: 35px 20px; box-shadow: 0 -10px 25px rgba(0,0,0,0.08); display: flex; flex-direction: column; align-items: center;">
+            
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; width: 100%; justify-content: center; padding-bottom: 20px; border-bottom: 1px dashed #e2e8f0;">
+                <img id="ratingDriverPhoto" src="https://ui-avatars.com/api/?name=Driver&background=cbd5e1&color=ffffff" style="width: 65px; height: 65px; border-radius: 50%; object-fit: cover; border: 3px solid #f8fafc; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <div style="text-align: left;">
+                    <p style="color: #64748b; font-size: 0.8rem; margin-bottom: 2px; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;">Your Driver</p>
+                    <h3 id="ratingDriverName" style="color: #0f172a; font-size: 1.25rem; margin: 0; font-weight: 800;">Partner Name</h3>
+                </div>
+            </div>
+
+            <p style="color: #64748b; font-weight: 600; margin-bottom: 5px; font-size: 0.95rem;">Amount Paid (Cash/UPI)</p>
+            <h1 id="finalRiderFare" style="font-size: 3.8rem; color: #0f172a; font-weight: 800; margin-bottom: 30px; letter-spacing: -1px;">₹0</h1>
+            
+            <h4 style="color: #0f172a; font-weight: 800; font-size: 1.15rem; margin-bottom: 15px;">How was your trip?</h4>
+            
+            <div id="ratingStarsContainer" style="display: flex; justify-content: center; gap: 12px; font-size: 2.8rem; color: #e2e8f0; margin-bottom: 10px; cursor: pointer;">
+                <span onclick="setRatingUI(1)" style="transition: transform 0.2s;">★</span>
+                <span onclick="setRatingUI(2)" style="transition: transform 0.2s;">★</span>
+                <span onclick="setRatingUI(3)" style="transition: transform 0.2s;">★</span>
+                <span onclick="setRatingUI(4)" style="transition: transform 0.2s;">★</span>
+                <span onclick="setRatingUI(5)" style="transition: transform 0.2s;">★</span>
+            </div>
+            
+            <p id="ratingFeedbackText" style="color: #fbbf24; font-weight: 800; font-size: 1.1rem; height: 20px; margin-bottom: 35px;">Tap a star to rate</p>
+
+            <button class="btn" style="background: #0f172a; color: white; font-size: 1.15rem; font-weight: 700; border-radius: 16px; padding: 18px; width: 100%; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.1);" onclick="submitRideRating()">Submit & Go Home</button>
+        </div>
+    </section>
+
+    <section id="riderActivityScreen" class="screen with-nav" style="background: #f8fafc;">
+        <div class="padding-20">
+            <h2>Your Trips</h2>
+            <p class="text-muted">Your recent ride history.</p>
+            <div id="riderHistoryList" style="margin-top: 20px;">
+                </div>
+        </div>
+    </section>
+
+        <section id="riderProfileScreen" class="screen with-nav" style="background: #f2f2f7; align-items: flex-start; justify-content: flex-start; overflow-y: auto;">
+        
+        <div style="width: 100%; height: 40px;"></div>
+
+        <div style="padding: 0 20px; width: 100%; box-sizing: border-box; display: flex; gap: 18px; align-items: center; margin-bottom: 30px;">
+            <div style="width: 75px; height: 75px; border-radius: 50%; background: #ef4444; color: white; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 600; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);" id="profileAvatarContainer">
+                <img id="profileAvatarImg" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                <span id="profileAvatarLetter">R</span>
+            </div>
+            <div style="flex-grow: 1;">
+                <h2 id="riderProfileNameDisplay" style="margin: 0 0 2px 0; font-size: 1.5rem; color: #0f172a; font-weight: 800; letter-spacing: -0.5px;">Rider Name</h2>
+                <p id="riderProfileEmailDisplay" style="margin: 0 0 6px 0; color: #64748b; font-size: 0.95rem; font-weight: 500;">email@example.com</p>
+            </div>
+        </div>
+
+        <div class="ny-menu-group">
+            <div class="ny-menu-item" onclick="navigateTo('riderActivityScreen')">
+                <div class="ny-menu-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.447-2.724A2 2 0 013 15.382V8.618a2 2 0 011.553-1.894L9 4m0 16v-8m0 8l8-4V8l-8 4m8-4l-5.447-2.724A2 2 0 0010.447 5L9 4"/></svg>
+                </div>
+                <div class="ny-menu-text">My Rides</div>
+                <div class="ny-menu-chevron">›</div>
+            </div>
+            
+            <div class="ny-menu-item" onclick="navigateTo('supportScreen')">
+                <div class="ny-menu-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+                </div>
+                <div class="ny-menu-text">Help and Support</div>
+                <div class="ny-menu-chevron">›</div>
+          </div>
+
+            <div class="ny-menu-item" onclick="navigateTo('safetyScreen')">
+                <div class="ny-menu-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </div>
+                <div class="ny-menu-text">Safety</div>
+                <div class="ny-menu-chevron">›</div>
+            </div>
+            
+            <div class="ny-menu-item" onclick="navigateTo('aboutScreen')">
+                <div class="ny-menu-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+                </div>
+                <div class="ny-menu-text">About Us</div>
+                <div class="ny-menu-chevron">›</div>
+          </div>
+
+            <div class="ny-menu-item" onclick="logoutUser()">
+                <div class="ny-menu-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
+                </div>
+                <div class="ny-menu-text" style="color: #0f172a;">Logout</div>
+                <div class="ny-menu-chevron">›</div>
+            </div>
+        </div>
+        
+        <div style="height: 100px; width: 100%;"></div>
+    </section>
+
+    <section id="safetyScreen" class="screen with-nav" style="background: #f2f2f7; align-items: flex-start; justify-content: flex-start; overflow-y: auto;">
+        
+        <div style="background: #ffffff; padding: 45px 20px 15px 20px; width: 100%; box-sizing: border-box; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; border-bottom: 1px solid #e5e5ea;">
+            <button class="btn-text" style="padding: 0; margin: 0 15px 0 0; color: #0f172a; font-size: 1.5rem; font-weight: 300; background: none; border: none; cursor: pointer; display: flex; align-items: center; width: auto; height: auto;" onclick="navigateTo('riderProfileScreen')">←</button>
+            <h2 style="margin: 0; font-size: 1.3rem; color: #0f172a; font-weight: 700; letter-spacing: -0.3px;">Safety Center</h2>
+        </div>
+
+        <div style="padding: 25px 20px 10px 20px; width: 100%; box-sizing: border-box;">
+            <h3 style="color: #0f172a; font-weight: 800; font-size: 1.25rem; margin: 0 0 6px 0; letter-spacing: -0.3px;">Your Protection Protocol</h3>
+            <p style="color: #64748b; font-size: 0.9rem; margin: 0; font-weight: 500; line-height: 1.4;">Swipe through our triple-layer security pillars designed specifically for transit protection.</p>
+        </div>
+
+        <div class="ny-safety-slider hide-scrollbar">
+            <div class="ny-safety-card">
+                <img src="https://i.ibb.co/1fkmVYbY/IMG-20260617-201435.png" alt="Safety Protocol 1">
+                <h4>Verified Verification Locks</h4>
+                <p>Every transit request is locked behind randomized token codes, ensuring you never step into an unverified or incorrect vehicle.</p>
+            </div>
+
+            <div class="ny-safety-card">
+                <img src="https://i.ibb.co/gFhGw4vL/IMG-20260617-201506.png" alt="Safety Protocol 2">
+                <h4>Live Shield Monitoring</h4>
+                <p>Telemetry paths and location markers are tracked seamlessly by back-end infrastructure matrices to protect you throughout independent routes.</p>
+            </div>
+
+            <div class="ny-safety-card">
+                <img src="https://i.ibb.co/rRyCpXY6/IMG-20260617-201531.png" alt="Safety Protocol 3">
+                <h4>Instant Alert Routing</h4>
+                <p>High-priority alert links establish data lines to regional communication response centers the moment emergency flags are engaged.</p>
+            </div>
+        </div>
+
+        <div style="background: white; border-radius: 20px; margin: 10px 20px 30px 20px; padding: 25px 20px; width: calc(100% - 40px); box-sizing: border-box; box-shadow: 0 4px 12px rgba(0,0,0,0.01); border: 1px solid #e5e5ea; text-align: center;">
+            <h4 style="color: #ef4444; font-weight: 800; font-size: 1.1rem; margin: 0 0 12px 0; letter-spacing: 0.5px; text-transform: uppercase;">Our Absolute Guarantee</h4>
+            <p style="color: #475569; font-size: 0.9rem; line-height: 1.6; margin: 0 0 20px 0; font-weight: 500; padding: 0 5px;">
+                "Your safety is the foundational matrix of everything we build. RapidSafe enforces a strict, zero-compromise security baseline across our driver grid, mapping telemetry, verification safeguards, and instant emergency protocols into every single commute."
+            </p>
+            
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 10px;">
+                <img src="https://i.ibb.co/C5tNV150/1000074257-removebg-preview.png" alt="Signature" style="height: 80px; object-fit: contain; filter: contrast(200%) brightness(5);">
+                
+                <div style="color: #0f172a; font-weight: 800; font-size: 1rem; letter-spacing: -0.2px;">Mohammed Saqib Ahmed</div>
+                <div style="color: #94a3b8; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; margin-top: 3px;">Founder & CEO</div>
+            </div>
+        </div>
+
+        <div style="height: 100px; width: 100%;"></div>
+    </section>
+  
+          <section id="aboutScreen" class="screen" style="background: #ffffff; align-items: flex-start; justify-content: flex-start; overflow-y: auto;">
+        
+        <div style="background: #ffffff; padding: 45px 20px 15px 20px; width: 100%; box-sizing: border-box; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; border-bottom: 1px solid #f1f5f9;">
+            <button class="btn-text" style="padding: 0; margin: 0 15px 0 0; color: #0f172a; font-size: 1.5rem; font-weight: 300; background: none; border: none; cursor: pointer; display: flex; align-items: center; width: auto; height: auto;" onclick="navigateTo('riderProfileScreen')">←</button>
+            <h2 style="margin: 0; font-size: 1.25rem; color: #0f172a; font-weight: 700; flex-grow: 1; text-align: center; transform: translateX(-15px);">About</h2>
+        </div>
+
+        <div style="padding: 30px 20px; text-align: center; width: 100%; box-sizing: border-box;">
+            
+            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 25px;">
+                <img src="https://i.ibb.co/YBFNK9rw/rivon-safe-icon.png" alt="RapidSafe Logo" style="width: 55px; height: 55px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);">
+                
+                <div style="text-align: left; line-height: 1;">
+                    <h1 style="margin: 0; color: #0f172a; font-weight: 900; font-size: 1.8rem; letter-spacing: -1px;">RapidSafe</h1>
+                </div>
+            </div>
+            
+            <p style="color: #0f172a; font-size: 1.05rem; font-weight: 700; line-height: 1.6; text-align: left; margin: 0 0 35px 0;">
+                RapidSafe is an open platform to connect riders with drivers. The app makes it convenient for riders to book a ride with a transparent meter rate, hence minimal fare and zero hidden commissions.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; align-items: center; margin-bottom: 35px;">
+                <button onclick="window.open('https://sites.google.com/view/rapidsafe-7/terms-conditions', '_blank')" style="background: #f1f5f9; color: #0f172a; border: none; padding: 14px 24px; border-radius: 100px; font-weight: 700; font-size: 0.95rem; cursor: pointer; width: auto; min-width: 220px; transition: 0.2s;">Terms & Conditions</button>
+                <button onclick="window.open('https://sites.google.com/view/rapidsafe-7/privacy-policy', '_blank')" style="background: #f1f5f9; color: #0f172a; border: none; padding: 14px 24px; border-radius: 100px; font-weight: 700; font-size: 0.95rem; cursor: pointer; width: auto; min-width: 220px; transition: 0.2s;">Privacy Policy</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;">
+                
+                <div style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
+                    <h4 style="color: #334155; font-size: 0.85rem; font-weight: 800; margin: 0 0 10px 0;">Corporate Address</h4>
+                    <p style="color: #64748b; font-size: 0.8rem; line-height: 1.6; margin: 0; font-weight: 600;">
+                        RapidSafe Technologies<br>
+                        Private Limited<br>
+                        1st Main road,<br>
+                        Arokyamma Layout,<br>
+                        Bengaluru, Karnataka<br>
+                        560045, India.<br>
+                        Website:<br>
+                        https://rapidsafe.in/
+                    </p>
+                </div>
+
+                <div style="border: 1px solid #e2e8f0; border-radius: 16px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
+                    <h4 style="color: #334155; font-size: 0.85rem; font-weight: 800; margin: 0 0 10px 0;">Registered Address</h4>
+                    <p style="color: #64748b; font-size: 0.8rem; line-height: 1.6; margin: 0; font-weight: 600;">
+                        RapidSafe MSME<br>
+                        Private Limited<br>
+                        1st Main road,<br>
+                        Arokyamma Layout,<br>
+                        Bengaluru, Karnataka<br>
+                        560045, India.<br>
+                        Website:<br>
+                        https://rapidsafe.in/
+                    </p>
+                </div>
+
+            </div>
+
+            <div style="margin-top: 45px; color: #94a3b8; font-weight: 600; font-size: 0.9rem; letter-spacing: 1px;">
+                v1.0.0 (100)
+            </div>
+            
+            <div style="height: 40px;"></div>
+        </div>
+    </section>
+  
+      <section id="supportScreen" class="screen" style="background: #f2f2f7; align-items: flex-start; justify-content: flex-start; overflow-y: auto;">
+        
+        <div style="background: #ffffff; padding: 45px 20px 15px 20px; width: 100%; box-sizing: border-box; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; border-bottom: 1px solid #e5e5ea;">
+            <button class="btn-text" style="padding: 0; margin: 0 15px 0 0; color: #0f172a; font-size: 1.5rem; font-weight: 300; background: none; border: none; cursor: pointer; display: flex; align-items: center; width: auto; height: auto;" onclick="navigateTo('riderProfileScreen')">←</button>
+            <h2 style="margin: 0; font-size: 1.3rem; color: #0f172a; font-weight: 700; letter-spacing: -0.3px;">Help & Support</h2>
+        </div>
+
+        <div style="padding: 30px 20px 20px 20px; text-align: center; width: 100%; box-sizing: border-box;">
+            <div style="font-size: 4rem; margin-bottom: 10px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.05));">🎧</div>
+            <h3 style="color: #0f172a; font-weight: 800; font-size: 1.5rem; margin: 0 0 8px 0; letter-spacing: -0.5px;">How can we help?</h3>
+            <p style="color: #64748b; font-size: 0.95rem; line-height: 1.5; margin: 0; font-weight: 500;">Our support team is available to assist you with your rides, account, and safety concerns.</p>
+        </div>
+
+        <div style="padding: 10px 20px; width: 100%; box-sizing: border-box;">
+            <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); border: 1px solid #e5e5ea;">
+                <h4 style="color: #0f172a; font-size: 1.05rem; font-weight: 800; margin: 0 0 15px 0;">Contact Us</h4>
+                
+                <a href="mailto:contact.rapidsafe@gmail.com" style="display: flex; align-items: center; gap: 15px; text-decoration: none; padding: 15px; background: #f8fafc; border-radius: 14px; border: 1px solid #f1f5f9; transition: 0.2s;">
+                    <div style="width: 42px; height: 42px; background: #e0f2fe; color: #0284c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">✉️</div>
+                    <div style="flex-grow: 1;">
+                        <div style="color: #0f172a; font-weight: 800; font-size: 0.95rem; margin-bottom: 2px;">Email Support</div>
+                        <div style="color: #64748b; font-size: 0.85rem; font-weight: 600;">contact.rapidsafe@gmail.com</div>
+                    </div>
+                    <div style="color: #cbd5e1; font-size: 1.5rem;">›</div>
+                </a>
+            </div>
+        </div>
+
+        <div style="padding: 15px 20px; width: 100%; box-sizing: border-box;">
+            <h4 style="color: #64748b; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 10px 15px;">Common Issues</h4>
+            
+            <div class="ny-menu-group" style="margin: 0; width: 100%;">
+                
+                <div class="ny-menu-item" onclick="window.location.href='mailto:contact.rapidsafe@gmail.com?subject=I lost an item on my RapidSafe ride'">
+                    <div class="ny-menu-icon" style="font-size: 1.2rem; filter: grayscale(100%);">🎒</div>
+                    <div class="ny-menu-text">I lost an item</div>
+                    <div class="ny-menu-chevron">›</div>
+                </div>
+                
+                <div class="ny-menu-item" onclick="window.location.href='mailto:contact.rapidsafe@gmail.com?subject=Fare or Payment Issue on RapidSafe'">
+                    <div class="ny-menu-icon" style="font-size: 1.2rem; filter: grayscale(100%);">💳</div>
+                    <div class="ny-menu-text">Fare or Payment Issue</div>
+                    <div class="ny-menu-chevron">›</div>
+                </div>
+                
+                <div class="ny-menu-item" onclick="window.location.href='mailto:contact.rapidsafe@gmail.com?subject=Reporting a Safety Concern'">
+                    <div class="ny-menu-icon" style="font-size: 1.2rem; filter: grayscale(100%);">🛡️</div>
+                    <div class="ny-menu-text">Report a Safety Concern</div>
+                    <div class="ny-menu-chevron">›</div>
+                </div>
+
+            </div>
+        </div>
+
+        <div style="height: 60px; width: 100%;"></div>
+    </section>
+
+    <div id="inAppToast" class="in-app-toast">
+        <div class="toast-icon">🔔</div>
+        <div class="toast-content">
+            <h4 id="toastTitle">Notification</h4>
+            <p id="toastBody">Message goes here</p>
+        </div>
+        <button class="toast-close" onclick="closeToast()">×</button>
+    </div>
+  
+      <div id="cancelReasonOverlay" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 5000; flex-direction: column; justify-content: flex-end;">
+        <div style="background: white; padding: 25px 20px; border-radius: 24px 24px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.1);">
+            <h3 style="font-size: 1.3rem; color: #0f172a; margin-bottom: 20px;">Let us know the reason for cancellation</h3>
+            
+            <div id="cancelReasonsList" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
+                <button class="cancel-reason-btn" onclick="selectCancelReason(this, 'Wait time too long')"><span>🕒</span> Wait time too long</button>
+                <button class="cancel-reason-btn" onclick="selectCancelReason(this, 'Got another ride')"><span>🚕</span> Got another ride</button>
+                <button class="cancel-reason-btn" onclick="selectCancelReason(this, 'Wrong pickup location')"><span>📍</span> Wrong pickup location</button>
+                <button class="cancel-reason-btn" onclick="selectCancelReason(this, 'Driver not moving towards pickup')"><span>🚫</span> Driver not moving towards pickup</button>
+                <button class="cancel-reason-btn" onclick="selectCancelReason(this, 'My issue is not listed here')"><span>👎</span> My issue is not listed here</button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button id="confirmCancelBtn" class="btn" style="background: #cbd5e1; color: white; border-radius: 12px; padding: 16px; font-size: 1.1rem; font-weight: 700; transition: 0.2s; pointer-events: none;" onclick="processCancellation()">Submit</button>
+                <button class="btn btn-outline" style="border: none; color: #64748b; font-weight: 700; padding: 16px;" onclick="closeCancelModal()">Go Back</button>
+            </div>
+        </div>
+    </div>
+  
+      <div id="sosEmergencyOverlay" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; flex-direction: column; justify-content: flex-end;">
+        <div style="background: white; padding: 25px 20px; border-radius: 24px 24px 0 0; box-shadow: 0 -4px 25px rgba(239, 68, 68, 0.4);">
+            
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                <div class="pulse-loader" style="background: #fee2e2; color: #ef4444; width: 40px; height: 40px; font-size: 1.2rem;">🚨</div>
+                <h2 style="margin: 0; font-weight: 800; font-size: 1.6rem; color: #ef4444;">Emergency SOS</h2>
+            </div>
+            
+            <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 20px; line-height: 1.5;">Your live location and ride details are being monitored. Who do you need to contact?</p>
+
+            <div style="background: #f8fafc; padding: 15px; border-radius: 16px; margin-bottom: 25px; border: 1px solid #e2e8f0;">
+                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 8px; font-weight: 800; letter-spacing: 1px;">CURRENT RIDE DETAILS</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <div style="color: #0f172a; font-size: 1rem; font-weight: 700;" id="sosDriverNameText">Driver Name</div>
+                    <div style="font-weight: 800; color: #0f172a; font-size: 1rem; background: #fcd34d; padding: 2px 8px; border-radius: 6px; border: 1px solid #0f172a;" id="sosVehiclePlateText">KA -- --</div>
+                </div>
+                <div style="color: #ef4444; font-size: 0.85rem; margin-top: 10px; font-weight: 600; display: flex; gap: 6px; align-items: flex-start;">
+                    <span>📍</span> <span id="sosLocationText">Fetching live location...</span>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px;">
+                <a href="tel:100" class="btn" style="background: #ef4444; color: white; text-align: center; text-decoration: none; border-radius: 14px; padding: 18px; font-size: 1.15rem; font-weight: 800; display: block; width: 100%; box-sizing: border-box; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">📞 Call Police (100)</a>
+                <a href="tel:108" class="btn" style="background: #f59e0b; color: white; text-align: center; text-decoration: none; border-radius: 14px; padding: 16px; font-size: 1.1rem; font-weight: 800; display: block; width: 100%; box-sizing: border-box;">🚑 Call Ambulance (108)</a>
+                <button class="btn btn-outline" style="border: none; color: #64748b; font-weight: 700; padding: 16px; width: 100%; font-size: 1.05rem;" onclick="closeSOS()">Cancel Alert</button>
+            </div>
+        </div>
+    </div>
+
+  <div id="referQrModalOverlay" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; padding: 20px;">
+        <div style="background: #ffffff; border-radius: 28px; width: 100%; max-width: 320px; padding: 30px 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); text-align: center; box-sizing: border-box; animation: popIn 0.25s ease-out;">
+            
+            <h3 style="color: #0f172a; font-weight: 800; font-size: 1.25rem; margin: 0 0 6px 0;">Download RapidSafe</h3>
+            <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 25px 0; line-height: 1.4;">Scan this QR code to download the application and automatically inherit referral credits.</p>
+            
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 20px; display: inline-block; margin-bottom: 25px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);">
+                <img id="referralQrImageElement" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://rapidsafe.in/download" alt="Referral QR Code" style="width: 180px; height: 180px; display: block; mix-blend-mode: multiply;">
+            </div>
+
+            <button class="btn" style="background: #f1f5f9; color: #475569; font-size: 1rem; font-weight: 700; padding: 14px; border-radius: 14px; width: 100%; border: none;" onclick="closeReferQrModal()">Go Back</button>
+        </div>
+    </div>
+  
+    <nav class="bottom-nav-bar" id="riderBottomNav">
+        <button class="nav-item active" onclick="navigateTo('riderDashboardScreen')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>Home</span>
+        </button>
+        <button class="nav-item" onclick="navigateTo('riderActivityScreen')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.447-2.724A2 2 0 013 15.382V8.618a2 2 0 011.553-1.894L9 4m0 16v-8m0 8l8-4V8l-8 4m8-4l-5.447-2.724A2 2 0 0010.447 5L9 4"/></svg>
+            <span>My Rides</span>
+        </button>
+        <button class="nav-item" onclick="navigateTo('riderProfileScreen')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span>Profile</span>
+        </button>
+    </nav>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
